@@ -56,7 +56,7 @@ def download_ecmwf_air_pressure(stopYear, stopMonth, startYear=1981, startMonth=
     
     #Create destination directory
     if path.exists(destinationDir) == False:
-        os.mkdirs(destinationDir);
+        os.makedirs(destinationDir);
     
     for year in range(startYear, stopYear+1):
         for month in range(1, 13):

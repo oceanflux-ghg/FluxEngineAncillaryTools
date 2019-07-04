@@ -26,7 +26,7 @@ def download_woa_salinity(destinationDir="downloaded_files", sourceTemplate=Temp
     
     #Create destination directory
     if path.exists(destinationDir) == False:
-        os.mkdirs(destinationDir);
+        os.makedirs(destinationDir);
     
     sslContext = ssl._create_unverified_context(); #Ignore SSL verification (shttp)
     #urlOpener = urllib.URLopener(); #http
