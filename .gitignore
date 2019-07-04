@@ -15,8 +15,8 @@ Thumbs.db
 
 ### Input data (downloaded and processed) ###
 data/**
-#!data
-#!data/mbl_reference_vco2/data/**
+!data
+!data/mbl_reference_vco2/data/**
 
 ### Output directory ###
 output/**
