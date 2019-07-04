@@ -13,9 +13,14 @@ Thumbs.db
 ### Log files: ###
 *.log
 
+### Input data (downloaded and processed) ###
+data/**
+#!data
+#!data/mbl_reference_vco2/data/**
+
 ### Output directory ###
-fe_output/**
-processing_output/**
+output/**
+
 
 ### Temporary folders: downloaded and processed data folders ###
 _todelete/**
