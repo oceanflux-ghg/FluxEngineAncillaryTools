@@ -27,7 +27,7 @@ def download_reynolds_avhrr_sst(stopYear, stopMonth, startYear=1981, startMonth=
     
     #Create destination directory
     if path.exists(destinationDir) == False:
-        os.mkdir(destinationDir);
+        os.mkdirs(destinationDir);
     
     sslContext = ssl._create_unverified_context(); #Ignore SSL verification
     for year in range(startYear, stopYear+1):
