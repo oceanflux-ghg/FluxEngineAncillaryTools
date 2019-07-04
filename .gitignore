@@ -21,26 +21,5 @@ data/**
 ### Output directory ###
 output/**
 
-
-### Temporary folders: downloaded and processed data folders ###
-_todelete/**
-processing_ccmp_windu10/downloaded_files/**
-processing_ccmp_windu10/ccmp_v2.0_monthly_resampled_1.0x1.0/**
-
-
-processing_ccmp_windu10/ecmwf_era_interim_monthly_1.0x1.0_downloaded/**
-processing_mbl_reference_vco2/noaa_esrl_mbl_reflayer_vCO2_1.0x1.0/**
-processing_mbl_reference_vco2/data/**
-processing_reynolds_sst/downloaded_files/**
-processing_reynolds_sst/reynolds_avhrr_only_monthly_resampled_1.0x1.0/**
-processing_woa_salinity/downloaded_files/**
-processing_woa_salinity/NOAA_WOA_decav_monthly_surface_salinity_1.0x1.0/**
-
-
 #TEMP - this needs to be restructured.
 SOCAT_reanalysis/**
-watson_fCO2_data/**
-
-
-### todo list ###
-TODO.txt
