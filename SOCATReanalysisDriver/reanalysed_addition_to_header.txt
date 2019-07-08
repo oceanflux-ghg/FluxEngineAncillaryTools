@@ -1,0 +1,8 @@
+Reanalysed values are adjusted to a consistent temperature and depth using the reanalysis tool packaged with FluxEngine (https://github.com/oceanflux-ghg/FluxEngine) and the SST temperature dataset proviced by NOAA OISST (available from https://www.esrl.noaa.gov/psd/data/gridded/data.noaa.oisst.v2.html). Details of the reanalysis method are described in Goddijn-Murphy, L. M., Woolf, D. K., Land, P. E., Shutler, J. D., & Donlon, C. (2015). The OceanFlux Greenhouse Gases methodology for deriving a sea surface climatology of CO2 fugacity in support of air-sea gas flux studies.Ocean Science, 11(4), 519–541. https://doi.org/10.5194/os-11-519-2015.
+
+The following additional columns added containing data from the reanalysis
+ * T_reynolds [C] – Ocean sub-skin temperature from the NOAA OISST dataset (Celsius)
+ * fCO2_reanalysed [uatm] – Reanalysed fugacity of CO2 (μatm)
+ * pCO2_SST [uatm] – The measured partial pressure of CO2  (μatm)
+ * pCO2_reanalysed [uatm] – Reanalysed partial pressure of CO2 (μatm)
+
