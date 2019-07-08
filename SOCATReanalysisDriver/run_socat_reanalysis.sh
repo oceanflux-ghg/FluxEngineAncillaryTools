@@ -19,32 +19,27 @@ reynoldsSSTTail="01_OCF-SST-GLO-1M-100-REYNOLDS_1.0x1.0.nc" #Tail is the filenam
 
 #Global SOCATv2019 ascii
 datasetName="SOCATv2019" #Input data should be in a sub-directory which matched this name.
-# python $fluxEngineRoot"fluxengine_src/tools/reanalyse_socat_driver.py" -socat_dir $inputDataPath$datasetName"/" -socat_files $datasetName".tsv" -sst_dir $reynoldsSSTRoot -sst_tail $reynoldsSSTTail -output_dir $outputDirectory$datasetName"/output_SOCATv2019_ascii" -socatversion 6 -usereynolds -startyr 1957 -endyr 2019 -keepduplicates -keeptempfiles -asciioutput
-# #Merge reanalysed data into original text file.
-# python combine_ascii.py --socatAsciiPath $inputDataPath$datasetName"/"$datasetName".tsv" --reanalysisDataDirectory $outputDirectory$datasetName"/output_SOCATv2019_ascii/output/reanalysed_data/" --outputPath "output/merged/"$datasetName".tsv" --startYear "1981" --stopYear "2019"
+python $fluxEngineRoot"fluxengine_src/tools/reanalyse_socat_driver.py" -socat_dir $inputDataPath$datasetName"/" -socat_files $datasetName".tsv" -sst_dir $reynoldsSSTRoot -sst_tail $reynoldsSSTTail -output_dir $outputDirectory$datasetName"/output_SOCATv2019_ascii" -socatversion 6 -usereynolds -startyr 1957 -endyr 2019 -keepduplicates -keeptempfiles -asciioutput
+#Merge reanalysed data into original text file.
+python combine_ascii.py --socatAsciiPath $inputDataPath$datasetName"/"$datasetName".tsv" --reanalysisDataDirectory $outputDirectory$datasetName"/output_SOCATv2019_ascii/output/reanalysed_data/" --outputPath "output/merged/"$datasetName".tsv" --startYear "1981" --stopYear "2019"
 python add_header_rename_columns.py --reanalysedInputFile "output/merged/"$datasetName".tsv" --reanalysedOutputFile "output/merged/"$datasetName"_with_header.tsv" --socatAsciiFile "input_data/"$datasetName"/"$datasetName".tsv"
 
-#reanalysedInputFile = "output/merged/SOCATv5_mini.tsv"; #Input file to add header to
-    #reanalysedOutputFile = "output/merged/SOCATv5_mini_withheader.tsv"; #Output file to write
-    #socatAsciiFile = "input_data/SOCATv5/SOCATv5_NorthPacific.tsv"; #Header is extracted from this file
-    #additionalHeaderTextFile = "reanalysed_addition_to_header.txt"; #Additional text to add at the end of the old header
-
-# #Global SOCATc2019 netCDF
-# datasetName="SOCATv2019" #Input data should be in a sub-directory which matched this name.
-# python $fluxEngineRoot"fluxengine_src/tools/reanalyse_socat_driver.py" -socat_dir $inputDataPath$datasetName"/" -socat_files $datasetName".tsv" -sst_dir $reynoldsSSTRoot -sst_tail $reynoldsSSTTail -output_dir $outputDirectory$datasetName"/output_SOCATv2019_netCDF" -socatversion 6 -usereynolds -startyr 1957 -endyr 2019 -keepduplicates -keeptempfiles
-# #Merge reanalysed data into original nc file.
-# python combine_netcdf.py --socatGridPath $inputDataPath$datasetName"/"$datasetName"_tracks_gridded_monthly.nc" --reanalysisDataDirectory $outputDirectory$datasetName"/output_SOCATv2019_netCDF/output/reanalysed_global/" --outputPath "output/merged/"$datasetName".nc" --startYear "1957" --stopYear "2019"
+#Global SOCATc2019 netCDF
+datasetName="SOCATv2019" #Input data should be in a sub-directory which matched this name.
+python $fluxEngineRoot"fluxengine_src/tools/reanalyse_socat_driver.py" -socat_dir $inputDataPath$datasetName"/" -socat_files $datasetName".tsv" -sst_dir $reynoldsSSTRoot -sst_tail $reynoldsSSTTail -output_dir $outputDirectory$datasetName"/output_SOCATv2019_netCDF" -socatversion 6 -usereynolds -startyr 1957 -endyr 2019 -keepduplicates -keeptempfiles
+#Merge reanalysed data into original nc file.
+python combine_netcdf.py --socatGridPath $inputDataPath$datasetName"/"$datasetName"_tracks_gridded_monthly.nc" --reanalysisDataDirectory $outputDirectory$datasetName"/output_SOCATv2019_netCDF/output/reanalysed_global/" --outputPath "output/merged/"$datasetName".nc" --startYear "1957" --stopYear "2019"
 
 
 
 ####################################
 # Uncomment to run SOCATv6 example
 # #Global SOCATv6 ascii
-datasetName="SOCATv6" #Input data should be in a sub-directory which matched this name.
+# datasetName="SOCATv6" #Input data should be in a sub-directory which matched this name.
 # python $fluxEngineRoot"fluxengine_src/tools/reanalyse_socat_driver.py" -socat_dir $inputDataPath$datasetName"/" -socat_files $datasetName".tsv" -sst_dir $reynoldsSSTRoot -sst_tail $reynoldsSSTTail -output_dir $outputDirectory$datasetName"/output_SOCATv6_ascii" -socatversion 6 -usereynolds -startyr 1957 -endyr 2018 -keepduplicates -keeptempfiles -asciioutput
 # #Merge reanalysed data into original text file.
 # python combine_ascii.py --socatAsciiPath $inputDataPath$datasetName"/"$datasetName".tsv" --reanalysisDataDirectory $outputDirectory$datasetName"/output_SOCATv6_ascii/output/reanalysed_data/" --outputPath "output/merged/"$datasetName".tsv" --startYear "1981" --stopYear "2018"
-python add_header_rename_columns.py --reanalysedInputFile "output/merged/"$datasetName".tsv" --reanalysedOutputFile "output/merged/"$datasetName"_with_header.tsv" --socatAsciiFile "input_data/"$datasetName"/"$datasetName".tsv"
+# python add_header_rename_columns.py --reanalysedInputFile "output/merged/"$datasetName".tsv" --reanalysedOutputFile "output/merged/"$datasetName"_with_header.tsv" --socatAsciiFile "input_data/"$datasetName"/"$datasetName".tsv"
 
 # #Global SOCATv6 netCDF
 # datasetName="SOCATv6" #Input data should be in a sub-directory which matched this name.
@@ -56,11 +51,11 @@ python add_header_rename_columns.py --reanalysedInputFile "output/merged/"$datas
 ####################################
 # Uncomment to run SOCATv5 example
 # #Global SOCATv5 ascii
-datasetName="SOCATv5" #Input data should be in a sub-directory which matched this name.
+# datasetName="SOCATv5" #Input data should be in a sub-directory which matched this name.
 # python $fluxEngineRoot"fluxengine_src/tools/reanalyse_socat_driver.py" -socat_dir $inputDataPath$datasetName"/" -socat_files $datasetName".tsv" -sst_dir $reynoldsSSTRoot -sst_tail $reynoldsSSTTail -output_dir $outputDirectory$datasetName"/output_SOCATv5_ascii" -socatversion 5 -usereynolds -startyr 1957 -endyr 2018 -keepduplicates -keeptempfiles -asciioutput
 # #Merge reanalysed data into original text file.
 # python combine_ascii.py --socatAsciiPath $inputDataPath$datasetName"/"$datasetName".tsv" --reanalysisDataDirectory $outputDirectory$datasetName"/output_SOCATv5_ascii/output/reanalysed_data/" --outputPath "output/merged/"$datasetName".tsv" --startYear "1981" --stopYear "2018"
-python add_header_rename_columns.py --reanalysedInputFile "output/merged/"$datasetName".tsv" --reanalysedOutputFile "output/merged/"$datasetName"_with_header.tsv" --socatAsciiFile "input_data/"$datasetName"/"$datasetName".tsv"
+# python add_header_rename_columns.py --reanalysedInputFile "output/merged/"$datasetName".tsv" --reanalysedOutputFile "output/merged/"$datasetName"_with_header.tsv" --socatAsciiFile "input_data/"$datasetName"/"$datasetName".tsv"
 
 # #Global SOCATv5 netCDF
 # datasetName="SOCATv5" #Input data should be in a sub-directory which matched this name.
