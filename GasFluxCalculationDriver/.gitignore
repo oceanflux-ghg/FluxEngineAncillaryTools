@@ -1,0 +1,29 @@
+### OS generated files: ###
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+### Compiled source: ###
+*.pyc
+
+### Log files: ###
+*.log
+
+### Input data (downloaded and processed) ###
+!data/
+data/*
+!data/mbl_reference_vco2/
+data/mbl_reference_vco2/*
+!data/mbl_reference_vco2/data/
+
+
+
+### Output directory ###
+output/**
+
+#TEMP - this needs to be restructured.
+SOCAT_reanalysis/**
