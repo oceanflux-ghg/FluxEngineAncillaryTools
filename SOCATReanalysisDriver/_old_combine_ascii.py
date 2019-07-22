@@ -13,6 +13,7 @@ import os;
 import pandas as pd;
 import numpy as np;
 import argparse;
+#from datetime import datetime, timedelta;
 
 
 #Returns the header portion of a socat ascii file. This included everything before the individual data points:
@@ -49,6 +50,31 @@ def is_match(socatRow, reanalysedRow):
     else:
         return False;
 
+##Returns the row in socatMonthSlice (dataframe) which corresponds to the time/date and lon/lat and exposocde of toMatchRow.
+##   toMatchRow should be a row from a reanalysed_socat output file
+##   socatMonthSlice should be the year-month subset of the original socat data
+#def match_row(toMatchRow, socatMonthSlice):
+#    lonToMatch = toMatchRow["lon"]; #Differences between the way longitude is stored between the two datasets.
+#    
+#    matches = socatMonthSlice[#(socatMonthSlice["yr"] == toMatchRow["yr"]) &
+#                               #(socatMonthSlice["mon"] == toMatchRow["mon"]) &
+#                               (socatMonthSlice["day"] == toMatchRow["day"]) &
+#                               (socatMonthSlice["hh"] == toMatchRow["hh"]) &
+#                               (socatMonthSlice["mm"] == toMatchRow["mm"]) &
+#                               (socatMonthSlice["ss"] == toMatchRow["ss"]) &
+#                               #(socatMonthSlice["Expocode"] == toMatchRow["expocode"]) &
+#                               (np.isclose(socatMonthSlice["latitude [dec.deg.N]"], toMatchRow["lat"], rtol=0, atol=1e-04)) &
+#                               (np.isclose(socatMonthSlice["longitude [dec.deg.E]"], lonToMatch, rtol=0, atol=1e-04)) &
+#                               (np.isclose(socatMonthDF["fCO2rec [uatm]"], curMonthDF["fCO2_SST"], rtol=0, atol=1e-04))
+#                               ];
+#    
+#    #print "Matches:", len(matches);
+#                              
+#    if len(matches) != 1:
+#        raise ValueError("There were %d matches for the given row in match_row!"%len(matches));
+#    
+#    
+#    return matches#.iloc[0]; #Return the row which matches 'toMatchRow'
 
 def what_no_match(socatRow, reanalysedRow):
     socatLonToUse = socatRow["longitude [dec.deg.E]"];
@@ -75,10 +101,24 @@ def what_no_match(socatRow, reanalysedRow):
         return True, None, None;
 
 
+
+##socat6AsciiPath = path.expanduser("~/data/SOCAT_ascii/SOCATv6/SOCATv6.tsv");
+##reanalysedAsciiPath = path.expanduser("output_SOCATv6_ascii/output/reanalysed_data");
+#socat6AsciiPath = path.expanduser("/home/verwirrt/Desktop/PostDoc/Backup/data/SOCAT_ascii/SOCATv5/SOCATv5.tsv");
+#reanalysedAsciiPath = path.expanduser("output_SOCATv5_ascii/output/reanalysed_data");
+
+#newAsciiOutputPath = "socatv5_reanalysed_ascii_from1981_raw.tsv";
+
+#startYr = 1957#1981;
+#stopYr = 2018#2018;
+
 #Perform the combination step.
-def do_combine_ascii(socatAsciiPath, reanalysisDataDirectory, outputPath, startYr, stopYr, suffix="v6"):
-    
-    doSanityCheck = False;
+def do_combine_ascii(socatAsciiPath, reanalysisDataDirectory, outputPath, startYr, stopYr):
+#socatAsciiPath = "input_data/SOCATv5/SOCATv5_NorthPacific.tsv"
+#reanalysisDataDirectory = "output/SOCATv5/output_SOCATv5_ascii_mini/output/reanalysed_data/"
+#outputPath = "output/merged/SOCATv5_mini.tsv"
+#startYr = 1981
+#stopYr = 2017
 
     #Append ascii files to a single ascii file #
     socatTop = get_socat_header(socatAsciiPath);
@@ -100,10 +140,13 @@ def do_combine_ascii(socatAsciiPath, reanalysisDataDirectory, outputPath, startY
     
     
     
+    #totalGenRow = -1;
     numMissingRows = 0;
+    #missingRows = [];
     
     numSkipped = 0;
     expectedSkips = [];
+    #socatIndex=0;
     
     debugLengths = [];
     debugTotals = [];
@@ -116,7 +159,7 @@ def do_combine_ascii(socatAsciiPath, reanalysisDataDirectory, outputPath, startY
         #for month in range(1, 13):
             print year, month;
             monthStr = format(month, "02d");
-            monthYearFilename = "GL_from_"+str(year)+"_to_"+str(year)+"_"+monthStr+"_"+suffix+".txt";
+            monthYearFilename = "GL_from_"+str(year)+"_to_"+str(year)+"_"+monthStr+"_v5.txt";
             
             socatMonthDF = socatDF[(socatDF["yr"] == year) & (socatDF["mon"] == month)];
             
@@ -129,6 +172,7 @@ def do_combine_ascii(socatAsciiPath, reanalysisDataDirectory, outputPath, startY
                 expectedNumSkips = len(socatMonthDF) - len(curMonthDF);
                 numCurMonthSkipped = 0;
                 
+                #monthYearSocatOffset += socatIndex;
                 socatIndex=-1;
                 for r in range(0, len(curMonthDF)):
                     socatIndex += 1;
@@ -141,6 +185,7 @@ def do_combine_ascii(socatAsciiPath, reanalysisDataDirectory, outputPath, startY
                         if numCurMonthSkipped > expectedNumSkips:
                             raise SystemExit();
                     
+                    #print r, socatIndex, socatMonthDF.iloc[socatIndex]["fCO2rec [uatm]"], curMonthDF.iloc[r]["fCO2_SST"];
                     #Populate new columns
                     SST_C[socatIndex+monthYearSocatOffset] = curMonthDF.iloc[r]["SST_C"];
                     Tcl_C[socatIndex+monthYearSocatOffset] = curMonthDF.iloc[r]["Tcl_C"];
@@ -157,7 +202,6 @@ def do_combine_ascii(socatAsciiPath, reanalysisDataDirectory, outputPath, startY
             except IOError:
                 monthYearSocatOffset += len(socatMonthDF);
                 print "Skipping ASCII month "+monthStr+" for year "+str(year)+" because it doesn't exist.";
-                print monthYearPath
             print year, month, "length:", len(socatMonthDF), "monthYearSocatOffset =", monthYearSocatOffset;
             debugLengths.append(len(socatMonthDF));
             debugTotals.append(monthYearSocatOffset);
@@ -172,6 +216,18 @@ def do_combine_ascii(socatAsciiPath, reanalysisDataDirectory, outputPath, startY
             print i, newTotal - debugTotals[i];
     
     
+    #curMonthDF.loc[curMonthDF["lon"] <= 0, "lon"] += 360;
+    #
+    #curMonthDF.iloc[r]["lon"]
+    #
+    #print curMonthDF.iloc[r];
+    #print socatMonthDF.iloc[r];
+    #print what_no_match(socatMonthDF.iloc[r], curMonthDF.iloc[r]);
+    
+    
+    
+    
+    
     #Append columns
     print "Adding columns...";
     socatDF["SST_C"] = SST_C;
@@ -181,24 +237,7 @@ def do_combine_ascii(socatAsciiPath, reanalysisDataDirectory, outputPath, startY
     socatDF["pCO2_SST"] = pCO2_SST;
     socatDF["pCO2_Tym"] = pCO2_Tym;
     
-    
-    #Now append the pre-1981 data which could not be reanalysed.
-    print "Reading original socat data";
-    socatTop = get_socat_header(socatAsciiPath);
-    origDF = pd.read_table(socatAsciiPath, sep='\t', skiprows=len(socatTop)-1);
-    olderRows = origDF[origDF["yr"] < 1981];
-    del origDF;
-    
-    for key in socatDF.keys(): #Add missing columns
-        if key not in olderRows.keys():
-            colToAdd = [np.nan]*len(olderRows);
-            olderRows[key] = colToAdd;
-    
-    #Append old rows to reanalysed data and sort.
-    socatDF = socatDF.append(olderRows, sort=False);
-    socatDF.sort_values(["yr", "mon", "day", "hh", "mm", "ss", "latitude [dec.deg.N]", "longitude [dec.deg.E]", "fCO2_SST", "SST_C"], inplace=True);
-
-
+    #len(socatDF)
     #Write to file
     if path.exists(path.dirname(outputPath)) == False:
         os.makedirs(path.dirname(outputPath));
@@ -206,31 +245,42 @@ def do_combine_ascii(socatAsciiPath, reanalysisDataDirectory, outputPath, startY
     socatDF.to_csv(f, header=True, index=False, sep="\t", float_format='%.3f');
     f.close();
     
-    print "Completed with", numMissingRows, "row(s) missing the reanalysed data. This is typically due to missing SST data during the reanalysis calculation. NaNs have been substituted into these rows.";
+    print "Completed with", numMissingRows, "row(s) missing from the reanalysed data. This is usually due to missing Earth observation data during the reanalysis calculation.";
     
-    if doSanityCheck:
-        print "Sanity checking...";
-        count1=0; count2=0;
-        for vi in range(0, len(socatDF)):
-            if vi%5000 == 0:
-                print vi, "of", len(socatDF);
-            if socatDF.iloc[vi]["fCO2rec [uatm]"] != socatDF.iloc[vi]["fCO2_SST"] and np.isnan(socatDF.iloc[vi]["fCO2_SST"]) == False:
-                print "fCO2:", vi, socatDF.iloc[vi]["fCO2rec [uatm]"], socatDF.iloc[vi]["fCO2_SST"];
-                count1+=1;
-            if socatDF.iloc[vi]["SST [deg.C]"] != socatDF.iloc[vi]["SST_C"] and np.isnan(socatDF.iloc[vi]["SST_C"]) == False:
-                print "Temp:", vi, socatDF.iloc[vi]["SST [deg.C]"], socatDF.iloc[vi]["SST_C"];
-                count2+=1;
-        print count1, "fCO2 missmatches and", count2, "Temperature mismatches";
-        
-        origDF = pd.read_table(socatAsciiPath, sep='\t', skiprows=len(socatTop)-1);
-        if len(socatDF) == len(origDF):
-            print "original and merged dataframes are the same length.";
-        else:
-            print "original and merged dataframes are NOT the same length.";
-            print len(socatDF), "vs", len(origDF);
+    
+    #socatDF = pd.read_table("/home/verwirrt/Desktop/PostDoc/Backup/Files/Tasks/Reanalyse_SOCAT_PANGAEA/Reanalyse_SOCATv5_PANGAEA/socatv5_reanalysed_ascii_from1981_fixed.tsv", sep='\t');
+    socatDF = pd.read_table(outputPath, sep='\t');
+    
+    
+    print "Sanity checking...";
+    count1=0; count2=0;
+    for vi in range(0, len(socatDF)):
+        if vi%5000 == 0:
+            print vi, "of", len(socatDF);
+        if socatDF.iloc[vi]["fCO2rec [uatm]"] != socatDF.iloc[vi]["fCO2_SST"] and np.isnan(socatDF.iloc[vi]["fCO2_SST"]) == False:
+            print "fCO2:", vi, socatDF.iloc[vi]["fCO2rec [uatm]"], socatDF.iloc[vi]["fCO2_SST"];
+            count1+=1;
+        if socatDF.iloc[vi]["SST [deg.C]"] != socatDF.iloc[vi]["SST_C"] and np.isnan(socatDF.iloc[vi]["SST_C"]) == False:
+            print "Temp:", vi, socatDF.iloc[vi]["SST [deg.C]"], socatDF.iloc[vi]["SST_C"];
+            count2+=1;
+    print count1, "fCO2 missmatches and", count2, "Temperature mismatches";
+    
+    #origDF = pd.read_table("/home/verwirrt/Desktop/PostDoc/Backup/data/SOCAT_ascii/SOCATv5/SOCATv5.tsv", sep='\t', skiprows=len(socatTop));
+    origDF = pd.read_table(socatAsciiPath, sep='\t', skiprows=len(socatTop)-1);
+    if len(socatDF) == len(origDF):
+        print "original and merged dataframes are the same length.";
+    else:
+        print "original and merged dataframes are NOT the same length.";
+        print len(socatDF), "vs", len(origDF);
 
 
 
+#print socatDF.iloc[10000000]
+#for i in range(0, len(SST_C)):
+#    if np.isnan(SST_C[i]) == False:
+#        print i,SST_C[i]
+    
+    
 if __name__ == "__main__":
     #parse arguments
     description = unicode("""Combines reanalysed ascii data with SOCAT text ascii data into one file..
@@ -248,15 +298,14 @@ if __name__ == "__main__":
                         help="Start year, e.g. 1999. Defaults to 1981.");
     parser.add_argument("--stopYear", type=int, default=2000,
                         help="Stop year (inclusive)), e.g. 2000");
-    parser.add_argument("--suffix", type=str, default="v6",
-                        help="Suffix (string) added to the end of reanalysis file names - corresponds to internal version number, e.g. v5 or v6");
-
     
     clArgs = parser.parse_args();   
     
     #Download files.
     print("* Merging SOCAT and reanalysed SOCAT data from", clArgs.startYear, "to", clArgs.stopYear);
-    do_combine_ascii(socatAsciiPath=clArgs.socatAsciiPath, reanalysisDataDirectory=clArgs.reanalysisDataDirectory, outputPath=clArgs.outputPath, startYr=clArgs.startYear, stopYr=clArgs.stopYear, suffix=clArgs.suffix);
+    do_combine_ascii(socatAsciiPath=clArgs.socatAsciiPath, reanalysisDataDirectory=clArgs.reanalysisDataDirectory, outputPath=clArgs.outputPath, startYr=clArgs.startYear, stopYr=clArgs.stopYear);
+
+
 
 
 #--socatAsciiPath input_data/SOCATv5/SOCATv5_NorthPacific.tsv --reanalysisDataDirectory output/SOCATv5/output_SOCATv5_ascii_mini/output/reanalysed_data/ --outputPath output/merged/SOCATv5_mini.tsv --startYear 1981 --stopYear 2017

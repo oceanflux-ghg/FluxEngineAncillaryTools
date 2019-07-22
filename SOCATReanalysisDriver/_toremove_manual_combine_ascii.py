@@ -76,7 +76,7 @@ def what_no_match(socatRow, reanalysedRow):
 
 
 #Perform the combination step.
-def do_combine_ascii(socatAsciiPath, reanalysisDataDirectory, outputPath, startYr, stopYr, suffix="v6"):
+def do_combine_ascii(socatAsciiPath, reanalysisDataDirectory, outputPath, startYr, stopYr):
     
     doSanityCheck = False;
 
@@ -116,7 +116,7 @@ def do_combine_ascii(socatAsciiPath, reanalysisDataDirectory, outputPath, startY
         #for month in range(1, 13):
             print year, month;
             monthStr = format(month, "02d");
-            monthYearFilename = "GL_from_"+str(year)+"_to_"+str(year)+"_"+monthStr+"_"+suffix+".txt";
+            monthYearFilename = "GL_from_"+str(year)+"_to_"+str(year)+"_"+monthStr+"_v5.txt";
             
             socatMonthDF = socatDF[(socatDF["yr"] == year) & (socatDF["mon"] == month)];
             
@@ -157,7 +157,6 @@ def do_combine_ascii(socatAsciiPath, reanalysisDataDirectory, outputPath, startY
             except IOError:
                 monthYearSocatOffset += len(socatMonthDF);
                 print "Skipping ASCII month "+monthStr+" for year "+str(year)+" because it doesn't exist.";
-                print monthYearPath
             print year, month, "length:", len(socatMonthDF), "monthYearSocatOffset =", monthYearSocatOffset;
             debugLengths.append(len(socatMonthDF));
             debugTotals.append(monthYearSocatOffset);
@@ -196,7 +195,7 @@ def do_combine_ascii(socatAsciiPath, reanalysisDataDirectory, outputPath, startY
     
     #Append old rows to reanalysed data and sort.
     socatDF = socatDF.append(olderRows, sort=False);
-    socatDF.sort_values(["yr", "mon", "day", "hh", "mm", "ss", "latitude [dec.deg.N]", "longitude [dec.deg.E]", "fCO2_SST", "SST_C"], inplace=True);
+    mergedDF.sort_values(["yr", "mon", "day", "hh", "mm", "ss", "lat", "lon", "fCO2_SST", "SST_C"], inplace=True);
 
 
     #Write to file
@@ -231,32 +230,155 @@ def do_combine_ascii(socatAsciiPath, reanalysisDataDirectory, outputPath, startY
 
 
 
-if __name__ == "__main__":
-    #parse arguments
-    description = unicode("""Combines reanalysed ascii data with SOCAT text ascii data into one file..
-    """, 'utf-8');
-    
-    parser = argparse.ArgumentParser(description=description);
-    parser.add_argument("--socatAsciiPath", type=str, default="defaultPath",
-                        help="Path to the socat ascii file.");
-    parser.add_argument("--reanalysisDataDirectory", type=str, default="defaultPath",
-                        help="Path to the data directory containing the reanalysed SOCAT data, e.g. 'output/reanalysed_data/'");
-    parser.add_argument("--outputPath", type=str, default="defaultPath",
-                        help="Path (and filename) where the merged datasets will be written to.");
-    
-    parser.add_argument("--startYear", type=int, default=1981,
-                        help="Start year, e.g. 1999. Defaults to 1981.");
-    parser.add_argument("--stopYear", type=int, default=2000,
-                        help="Stop year (inclusive)), e.g. 2000");
-    parser.add_argument("--suffix", type=str, default="v6",
-                        help="Suffix (string) added to the end of reanalysis file names - corresponds to internal version number, e.g. v5 or v6");
+#def do_append_pre1981(socatAsciiPath, mergedPath, outputPath, cutoffYear=1981, cutoffMonth=1):
+datasetName = "SOCATv2019";
+socatAsciiPath = "input_data/"+datasetName+"/"+datasetName+".tsv";
+mergedPath = "/home/rr/Remote/ServMount/Tasks_serv/FluxEngineAncillaryTools_complete/FEAT_fresh/FluxEngineAncillaryTools/SOCATReanalysisDriver/output/merged/"+datasetName+".tsv";
+outputPath = "/home/rr/Remote/ServMount/Tasks_serv/FluxEngineAncillaryTools_complete/FEAT_fresh/FluxEngineAncillaryTools/SOCATReanalysisDriver/output/merged/"+datasetName+"_final.tsv";
 
-    
-    clArgs = parser.parse_args();   
-    
-    #Download files.
-    print("* Merging SOCAT and reanalysed SOCAT data from", clArgs.startYear, "to", clArgs.stopYear);
-    do_combine_ascii(socatAsciiPath=clArgs.socatAsciiPath, reanalysisDataDirectory=clArgs.reanalysisDataDirectory, outputPath=clArgs.outputPath, startYr=clArgs.startYear, stopYr=clArgs.stopYear, suffix=clArgs.suffix);
+
+print "Reading original socat data: ", socatAsciiPath;
+socatTop = get_socat_header(socatAsciiPath);
+origDF = pd.read_table(socatAsciiPath, sep='\t', skiprows=len(socatTop)-1);
+olderRows = origDF[origDF["yr"] < 1981];
+del origDF;
+
+print "Reading merged socat data: ", mergedPath;
+mergedTop = get_socat_header(mergedPath);
+mergedDF = socatDF = pd.read_table(mergedPath, sep='\t', skiprows=len(mergedTop)-1);
+
+print "Adding nan columns to older rows";
+colsToAdd = [];
+for key in mergedDF.keys():
+    if key not in olderRows.keys():
+        colToAdd = [np.nan]*len(olderRows);
+        olderRows[key] = colToAdd;
+
+print "Appending older rows.", datasetName
+mergedDF = mergedDF.append(olderRows, sort=False);
+
+print "Sorting..."
+mergedDF.sort_values(["yr", "mon", "day", "hh", "mm", "ss", "latitude [dec.deg.N]", "longitude [dec.deg.E]", "fCO2_SST", "SST_C"], inplace=True);
+
+"Writing output file: ", outputPath;
+f = open(outputPath, mode='w');
+mergedDF.to_csv(f, header=True, index=False, sep="\t", float_format='%.3f');
+f.close();
+del mergedDF;
+del olderRows;
+
+
+#def do_append_pre1981(socatAsciiPath, mergedPath, outputPath, cutoffYear=1981, cutoffMonth=1):
+datasetName = "SOCATv6";
+socatAsciiPath = "input_data/"+datasetName+"/"+datasetName+".tsv";
+mergedPath = "/home/rr/Remote/ServMount/Tasks_serv/FluxEngineAncillaryTools_complete/FEAT_fresh/FluxEngineAncillaryTools/SOCATReanalysisDriver/output/merged/"+datasetName+".tsv";
+outputPath = "/home/rr/Remote/ServMount/Tasks_serv/FluxEngineAncillaryTools_complete/FEAT_fresh/FluxEngineAncillaryTools/SOCATReanalysisDriver/output/merged/"+datasetName+"_final.tsv";
+
+
+print "Reading original socat data: ", socatAsciiPath;
+socatTop = get_socat_header(socatAsciiPath);
+origDF = pd.read_table(socatAsciiPath, sep='\t', skiprows=len(socatTop)-1);
+olderRows = origDF[origDF["yr"] < 1981];
+del origDF;
+
+print "Reading merged socat data: ", mergedPath;
+mergedTop = get_socat_header(mergedPath);
+mergedDF = socatDF = pd.read_table(mergedPath, sep='\t', skiprows=len(mergedTop)-1);
+
+print "Adding nan columns to older rows";
+colsToAdd = [];
+for key in mergedDF.keys():
+    if key not in olderRows.keys():
+        colToAdd = [np.nan]*len(olderRows);
+        olderRows[key] = colToAdd;
+
+print "Appending older rows.", datasetName
+mergedDF = mergedDF.append(olderRows, sort=False);
+
+print "Sorting..."
+mergedDF.sort_values(["yr", "mon", "day", "hh", "mm", "ss", "latitude [dec.deg.N]", "longitude [dec.deg.E]", "fCO2_SST", "SST_C"], inplace=True);
+
+"Writing output file: ", outputPath;
+f = open(outputPath, mode='w');
+mergedDF.to_csv(f, header=True, index=False, sep="\t", float_format='%.3f');
+f.close();
+del mergedDF;
+del olderRows;
+
+
+#def do_append_pre1981(socatAsciiPath, mergedPath, outputPath, cutoffYear=1981, cutoffMonth=1):
+datasetName = "SOCATv5";
+socatAsciiPath = "input_data/"+datasetName+"/"+datasetName+".tsv";
+mergedPath = "/home/rr/Remote/ServMount/Tasks_serv/FluxEngineAncillaryTools_complete/FEAT_fresh/FluxEngineAncillaryTools/SOCATReanalysisDriver/output/merged/"+datasetName+".tsv";
+outputPath = "/home/rr/Remote/ServMount/Tasks_serv/FluxEngineAncillaryTools_complete/FEAT_fresh/FluxEngineAncillaryTools/SOCATReanalysisDriver/output/merged/"+datasetName+"_final.tsv";
+
+
+print "Reading original socat data: ", socatAsciiPath;
+socatTop = get_socat_header(socatAsciiPath);
+origDF = pd.read_table(socatAsciiPath, sep='\t', skiprows=len(socatTop)-1);
+olderRows = origDF[origDF["yr"] < 1981];
+del origDF;
+
+print "Reading merged socat data: ", mergedPath;
+mergedTop = get_socat_header(mergedPath);
+mergedDF = socatDF = pd.read_table(mergedPath, sep='\t', skiprows=len(mergedTop)-1);
+
+print "Adding nan columns to older rows";
+colsToAdd = [];
+for key in mergedDF.keys():
+    if key not in olderRows.keys():
+        colToAdd = [np.nan]*len(olderRows);
+        olderRows[key] = colToAdd;
+
+print "Appending older rows.", datasetName
+mergedDF = mergedDF.append(olderRows, sort=False);
+
+print "Sorting..."
+mergedDF.sort_values(["yr", "mon", "day", "hh", "mm", "ss", "latitude [dec.deg.N]", "longitude [dec.deg.E]", "fCO2_SST", "SST_C"], inplace=True);
+
+"Writing output file: ", outputPath;
+f = open(outputPath, mode='w');
+mergedDF.to_csv(f, header=True, index=False, sep="\t", float_format='%.3f');
+f.close();
+del mergedDF;
+del olderRows;
+
+
+
+
+
+#if __name__ == "__main__":
+#    #parse arguments
+#    description = unicode("""Combines reanalysed ascii data with SOCAT text ascii data into one file..
+#    """, 'utf-8');
+#    
+#    parser = argparse.ArgumentParser(description=description);
+#    parser.add_argument("--socatAsciiPath", type=str, default="defaultPath",
+#                        help="Path to the socat ascii file.");
+#    parser.add_argument("--reanalysisDataDirectory", type=str, default="defaultPath",
+#                        help="Path to the data directory containing the reanalysed SOCAT data, e.g. 'output/reanalysed_data/'");
+#    parser.add_argument("--outputPath", type=str, default="defaultPath",
+#                        help="Path (and filename) where the merged datasets will be written to.");
+#    
+#    parser.add_argument("--startYear", type=int, default=1981,
+#                        help="Start year, e.g. 1999. Defaults to 1981.");
+#    parser.add_argument("--stopYear", type=int, default=2000,
+#                        help="Stop year (inclusive)), e.g. 2000");
+#    
+#    clArgs = parser.parse_args();   
+#    
+#    #Download files.
+#    print("* Merging SOCAT and reanalysed SOCAT data from", clArgs.startYear, "to", clArgs.stopYear);
+#    #do_combine_ascii(socatAsciiPath=clArgs.socatAsciiPath, reanalysisDataDirectory=clArgs.reanalysisDataDirectory, outputPath=clArgs.outputPath, startYr=clArgs.startYear, stopYr=clArgs.stopYear);
+#    
+#    #Add pre-1981 values from the original dataset by inserting nans.
+#    
+#    clArgs.socatAsciiPath = "input_data/SOCATv2019/SOCATv2019_NorthPacific.tsv";
+#    clArgs.outputPath = "/home/rr/Remote/ServMount/Tasks_serv/FluxEngineAncillaryTools_complete/FEAT_fresh/FluxEngineAncillaryTools/SOCATReanalysisDriver/output/merged/SOCATv2019_mini.tsv";
+#    do_append_pre1981(socatAsciiPath=clArgs.socatAsciiPath, mergedPath=clArgs.outputPath, outputPath=clArgs.outputPath+"_full.tsv");
+#    
+
+
 
 
 #--socatAsciiPath input_data/SOCATv5/SOCATv5_NorthPacific.tsv --reanalysisDataDirectory output/SOCATv5/output_SOCATv5_ascii_mini/output/reanalysed_data/ --outputPath output/merged/SOCATv5_mini.tsv --startYear 1981 --stopYear 2017
