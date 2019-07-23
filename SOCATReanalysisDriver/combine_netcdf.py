@@ -17,7 +17,6 @@ import argparse;
 
 
 def copy_netcdf(inNC, outNC):
-
     # copy global attributes all at once via dictionary
     outNC.setncatts({"SOCAT_"+k:inNC.__dict__[k] for k in inNC.__dict__});
     #copy dimensions
@@ -33,7 +32,7 @@ def copy_netcdf(inNC, outNC):
         outNC[name].setncatts(inNC[name].__dict__);
         outNC[name][:] = inNC[name][:];
 
-    
+
 #Calculates the time index from month and year.
 def calc_time_index(year, month):
     return (year-1970)*12 + month - 1;
@@ -51,6 +50,7 @@ def do_combine_netcdf(socatGridPath, reanalysisDataDirectory, outputPath, startY
         os.makedirs(path.dirname(outputPath));
     combinedNC = Dataset(outputPath, 'w');
     
+    #Copy the original SOCAT data into the new file.
     socatNC = Dataset(socatGridPath, 'r');
     copy_netcdf(socatNC, combinedNC);
     
@@ -105,7 +105,6 @@ def do_combine_netcdf(socatGridPath, reanalysisDataDirectory, outputPath, startY
                         try:
                             newVar = combinedNC.createVariable(oldToNewMap[oldVarname], oldVar.dtype, (u"tmnth", u"ylat", u"xlon"));
                             print "Appending variable metadata:", oldVarname, newVar.name;
-                        
                             newVar.setncatts({k: oldVar.getncattr(k) for k in oldVar.ncattrs()}); # Copy variable attributes
                         except RuntimeError as e:
                             print e, "\nOld name:", oldVarname, "\nNew name: "+oldToNewMap[oldVarname];
@@ -124,6 +123,13 @@ def do_combine_netcdf(socatGridPath, reanalysisDataDirectory, outputPath, startY
                 print "Skipping netCDF month "+monthStr+" for year "+str(year)+" because it doesn't exist:", monthYearPath;
     
     
+    #(Re)Calculate and add reynolds SST to the netCDF file
+    combinedNC.createVariable("sst_reynolds", np.float32, ("tmnth", "ylat", "xlon"));
+    combinedNC["sst_reynolds"].setncatts(combinedNC["weighted_dT"].__dict__);
+    combinedNC["sst_reynolds"].__dict__["standard_name"] = "sst_reynolds";
+    combinedNC["sst_reynolds"].__dict__["long_name"] = "Mean sea surface temperature at a consistent-depth from the Reynolds OISST field.";
+    combinedNC["sst_reynolds"][:] = combinedNC["weighted_dT"][:] + combinedNC["sst_ave_weighted"][:];
+
     
     
     #Copy over important attributes
@@ -175,7 +181,7 @@ if __name__ == "__main__":
     clArgs = parser.parse_args();   
     
     #Download files.
-    print("* Merging SOCAT and reanalysed SOCAT data from", clArgs.startYear, "to", clArgs.stopYear);
+    print "* Merging SOCAT and reanalysed SOCAT data from", clArgs.startYear, "to", clArgs.stopYear;
     do_combine_netcdf(socatGridPath=clArgs.socatGridPath, reanalysisDataDirectory=clArgs.reanalysisDataDirectory, outputPath=clArgs.outputPath, startYr=clArgs.startYear, stopYr=clArgs.stopYear);
 
 
