@@ -124,11 +124,13 @@ def do_combine_netcdf(socatGridPath, reanalysisDataDirectory, outputPath, startY
     
     
     #(Re)Calculate and add reynolds SST to the netCDF file
-    combinedNC.createVariable("sst_reynolds", np.float32, ("tmnth", "ylat", "xlon"));
-    combinedNC["sst_reynolds"].setncatts(combinedNC["weighted_dT"].__dict__);
-    combinedNC["sst_reynolds"].__dict__["standard_name"] = "sst_reynolds";
-    combinedNC["sst_reynolds"].__dict__["long_name"] = "Mean sea surface temperature at a consistent-depth from the Reynolds OISST field.";
-    combinedNC["sst_reynolds"][:] = combinedNC["weighted_dT"][:] + combinedNC["sst_ave_weighted"][:];
+    if ("sst_ave_weighted" in combinedNC.keys()): #Early versions of the SOCAT dataset don't include the temperature data in the NC files.
+        combinedNC.createVariable("sst_reynolds", np.float32, ("tmnth", "ylat", "xlon"));
+        #combinedNC["sst_reynolds"].setncatts(combinedNC["weighted_dT"].__dict__);
+        combinedNC
+        combinedNC["sst_reynolds"].standard_name = "sst_reynolds";
+        combinedNC["sst_reynolds"].long_name = "Mean sea surface temperature at a consistent-depth from the Reynolds OISST field.";
+        combinedNC["sst_reynolds"][:] = combinedNC["weighted_dT"][:] + combinedNC["sst_ave_weighted"][:];
 
     
     

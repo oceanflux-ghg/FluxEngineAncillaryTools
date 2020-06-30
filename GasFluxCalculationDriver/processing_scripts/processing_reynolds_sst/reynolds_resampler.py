@@ -36,6 +36,9 @@ def rebin(m, shape):
     sh = (shape[0], m.shape[0]//shape[0], shape[1], m.shape[1]//shape[1]);
     return m.reshape(sh).mean(-1).mean(1);
 
+def rebin_sum(m, shape):
+    sh = (shape[0], m.shape[0]//shape[0], shape[1], m.shape[1]//shape[1]);
+    return m.reshape(sh).sum(-1).sum(1);
 
 def resample_reynolds(stopYear, stopMonth, startYear=1981, startMonth=9, lonResolution=1.0, latResolution=1.0, sourceTemplate=Template("downloaded_files/avhrr-only-v2.${YYYY}${MM}${DD}.nc"), destinationRootDirectory=""):
     if ((360.0 / lonResolution) % 1.0 != 0) or ((180.0 / latResolution) % 1.0 != 0):
@@ -67,15 +70,35 @@ def resample_reynolds(stopYear, stopMonth, startYear=1981, startMonth=9, lonReso
         
         print("Processing year/month:", year, month)
         sstVals = np.ma.empty((calendar.monthrange(year, month)[1], int(180/latResolution), int(360/lonResolution)));
+        sstCountVals = np.ma.empty((calendar.monthrange(year, month)[1], int(180/latResolution), int(360/lonResolution)));
+        sstErrVals = np.ma.empty((calendar.monthrange(year, month)[1], int(180/latResolution), int(360/lonResolution)));
         iceVals = np.ma.empty((calendar.monthrange(year, month)[1], int(180/latResolution), int(360/lonResolution)));
 
         for day in range(1, calendar.monthrange(year, month)[1]+1):
             dayStr = format(day, "02d");
-            dailyInputNc = Dataset(sourceTemplate.safe_substitute(YYYY=str(year), MM=monthStr, DD=dayStr), 'r');
+            #try each supplied sourceTemplate until we find one that matches a file
+            dailyInputNc = None;
+            for filePathTemplate in sourceTemplate:
+                if path.exists(filePathTemplate.safe_substitute(YYYY=str(year), MM=monthStr, DD=dayStr)):
+                    dailyInputNc = Dataset(filePathTemplate.safe_substitute(YYYY=str(year), MM=monthStr, DD=dayStr), 'r');
+                    break;
+            if dailyInputNc is None: #No matching template was found
+                print(" *** WARNING: No sourceTemplate matched for ", year, monthStr, dayStr);
             
             sst = dailyInputNc.variables["sst"][0,0,:,:];
             sstRebinned = rebin(sst, (int(180/latResolution), int(360/lonResolution)));
             sstVals[day-1,:,:] = sstRebinned;
+
+            sstCounts = sst.mask==False;
+            sstCounts = rebin_sum(sstCounts, (int(180/latResolution), int(360/lonResolution)));
+            hasData = np.where(sstCounts > 0);
+            sstCountVals[day-1,:,:] = sstCounts;
+
+            sstErrSquared = dailyInputNc.variables["err"][0,0,:,:]**2;
+            sstErrRebinned = np.sqrt(rebin_sum(sstErrSquared, (int(180/latResolution), int(360/lonResolution))));
+            sstErrRebinned[hasData] /= sstCounts[hasData];
+            sstErrVals[day-1,:,:] = sstErrRebinned;
+            #allErrs[hasData] += errs[hasData]**2; #sum errors as variance
             
             ice = dailyInputNc.variables["ice"][0,0,:,:];
             iceRebinned = rebin(ice, (int(180/latResolution), int(360/lonResolution)));
@@ -85,16 +108,19 @@ def resample_reynolds(stopYear, stopMonth, startYear=1981, startMonth=9, lonReso
         #Calculate data for monthly output file
         #SST
         means = sstVals.mean(0);
-        counts = sstVals.count(0);
-        stddevs = sstVals.std(0);
-        variances = sstVals.var(0);
-        medians = np.ma.median(sstVals, axis=0);
+        counts = sstCountVals.sum(0);
+        errs = np.sqrt(np.sum(sstErrVals**2, axis=0) / sstVals.count(0));
+        #counts = sstVals.count(0);
+        #stddevs = sstVals.std(0);
+        #variances = sstVals.var(0);
+        #medians = np.ma.median(sstVals, axis=0);
         
         means = np.roll(means, -int(180/latResolution), axis=1);
         counts = np.roll(counts, -int(180/latResolution), axis=1);
-        stddevs = np.roll(stddevs, -int(180/latResolution), axis=1);
-        variances = np.roll(variances, -int(180/latResolution), axis=1);
-        medians = np.roll(medians, -int(180/latResolution), axis=1);
+        errs = np.roll(errs, -int(180/latResolution), axis=1);
+        #stddevs = np.roll(stddevs, -int(180/latResolution), axis=1);
+        #variances = np.roll(variances, -int(180/latResolution), axis=1);
+        #medians = np.roll(medians, -int(180/latResolution), axis=1);
         
         #ICE
         meansIce = iceVals.mean(0);
@@ -135,15 +161,7 @@ def resample_reynolds(stopYear, stopMonth, startYear=1981, startMonth=9, lonReso
         
         stddevVar = newnc.createVariable("sst_stddev", "float32", (u"time", u"lat", u"lon"));
         stddevVar.setncatts({k: referenceNc.variables["sst_stddev"].getncattr(k) for k in referenceNc.variables["sst_stddev"].ncattrs()}); # Copy variable attributes
-        stddevVar[:] = np.ma.expand_dims(stddevs, axis=0);
-        
-        varianceVar = newnc.createVariable("sst_variance", "float32", (u"time", u"lat", u"lon"));
-        varianceVar.setncatts({k: referenceNc.variables["sst_variance"].getncattr(k) for k in referenceNc.variables["sst_variance"].ncattrs()}); # Copy variable attributes
-        varianceVar[:] = np.ma.expand_dims(variances, axis=0);
-        
-        medianVar = newnc.createVariable("sst_median", "float32", (u"time", u"lat", u"lon"));
-        medianVar.setncatts({k: referenceNc.variables["sst_median"].getncattr(k) for k in referenceNc.variables["sst_median"].ncattrs()}); # Copy variable attributes
-        medianVar[:] = np.ma.expand_dims(medians, axis=0);
+        stddevVar[:] = np.ma.expand_dims(errs, axis=0);
         
         #ICE
         meanIce = newnc.createVariable("ice", "float32", (u"time", u"lat", u"lon"));
@@ -177,7 +195,7 @@ if __name__ == "__main__":
                         help="Resolution (in degrees) for longitude. Must be an exact multiple of 360. Defaults to 1.0");
     parser.add_argument("--latResolution", type=float, default=1.0,
                         help="Resolution (in degrees) for latitude. Must be an exact multiple of 180. Defaults to 1.0");
-    parser.add_argument("--sourceTemplate", type=str, default="downloaded_files/avhrr-only-v2.${YYYY}${MM}${DD}.nc",
+    parser.add_argument("--sourceTemplate", type=str, nargs="+", default="downloaded_files/avhrr-only-v2.${YYYY}${MM}${DD}.nc",
                         help="String 'template' for the online download location. The file should be specified using ${YYYY}, ${MM} and ${DD} for year, month and day, respectively.");
     parser.add_argument("--destinationRootDirectory", type=str, default="",
                         help="Path to the root directory where processed output files will be stored. Defaults to the current working directory.");
@@ -185,7 +203,7 @@ if __name__ == "__main__":
 
     #Do the resample
     print("* Resampling Reynolds data from", clArgs.startMonth, clArgs.startYear, "to", clArgs.stopMonth, clArgs.stopYear, "to a lon/lat resolution of", clArgs.lonResolution, "x", clArgs.latResolution);
-    resample_reynolds(clArgs.stopYear, clArgs.stopMonth, clArgs.startYear, clArgs.startMonth, clArgs.lonResolution, clArgs.latResolution, sourceTemplate=Template(clArgs.sourceTemplate), destinationRootDirectory=clArgs.destinationRootDirectory);
+    resample_reynolds(clArgs.stopYear, clArgs.stopMonth, clArgs.startYear, clArgs.startMonth, clArgs.lonResolution, clArgs.latResolution, sourceTemplate=[Template(template) for template in clArgs.sourceTemplate], destinationRootDirectory=clArgs.destinationRootDirectory);
 
 
 

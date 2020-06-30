@@ -15,8 +15,8 @@ import ssl;
 from string import Template
 import argparse;
 
-#https://www.ncei.noaa.gov/data/sea-surface-temperature-optimum-interpolation/access/avhrr-only/201701/
-#avhrr-only/201504/avhrr-only-v2.20150401.nc
+#OLD URL: https://www.ncei.noaa.gov/data/sea-surface-temperature-optimum-interpolation/access/avhrr-only/201701/avhrr-only/201504/avhrr-only-v2.20150401.nc
+#NEW URL: https://www.ncei.noaa.gov/data/sea-surface-temperature-optimum-interpolation/v2.1/access/avhrr/202005/oisst-avhrr-v02r01.20200501.nc
 #wget -r -A.nc https://www.ncei.noaa.gov/data/sea-surface-temperature-optimum-interpolation/access/avhrr-only/201601/
 
 
@@ -76,7 +76,7 @@ if __name__ == "__main__":
                         help="Start month (numeric), e.g. 1 for January, 12 for December. Defaults to 6 (June).");
     parser.add_argument("--destinationDir", default="downloaded_files", type=str,
                         help="Destination directory for downloaded files.");
-    parser.add_argument("--sourceTemplate", type=str, default="https://www.ncei.noaa.gov/data/sea-surface-temperature-optimum-interpolation/access/avhrr-only/${YYYY}${MM}/avhrr-only-v2.${YYYY}${MM}${DD}.nc",
+    parser.add_argument("--sourceTemplate", type=str, default="https://www.ncei.noaa.gov/data/sea-surface-temperature-optimum-interpolation/v2.1/access/avhrr/${YYYY}${MM}/oisst-avhrr-v02r01.${YYYY}${MM}${DD}.nc",
                         help="String 'template' for the online download location. The file should be specified using ${YYYY}, ${MM} and ${DD} for year, month and day, respectively.");
     clArgs = parser.parse_args();   
     

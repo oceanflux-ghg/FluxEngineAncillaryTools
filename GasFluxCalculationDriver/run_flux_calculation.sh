@@ -49,7 +49,7 @@ configPathNNA="configs/nna_run.conf" #configuration file for the neural network 
 #Download
 python processing_scripts/processing_reynolds_sst/reynolds_downloader.py $stopYearData $stopMonthData $startYearData $startMonthData --destinationDir $sstReynoldsPath"downloaded_files"
 #Resample
-python processing_scripts/processing_reynolds_sst/reynolds_resampler.py $stopYearData $stopMonthData $startYearData $startMonthData --lonResolution $lonResampleResolution --latResolution $latResampleResolution --sourceTemplate $sstReynoldsPath"downloaded_files/avhrr-only-v2.\${YYYY}\${MM}\${DD}.nc" --destinationRootDirectory $sstReynoldsPath
+python processing_scripts/processing_reynolds_sst/reynolds_resampler.py $stopYearData $stopMonthData $startYearData $startMonthData --lonResolution $lonResampleResolution --latResolution $latResampleResolution --sourceTemplate $sstReynoldsPath"downloaded_files/oisst-avhrr-v02r01.\${YYYY}\${MM}\${DD}.nc" $sstReynoldsPath"downloaded_files/avhrr-only-v2.\${YYYY}\${MM}\${DD}.nc" --destinationRootDirectory $sstReynoldsPath
 
 
 #############################################
