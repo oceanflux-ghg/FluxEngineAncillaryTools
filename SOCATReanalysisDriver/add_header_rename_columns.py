@@ -30,11 +30,11 @@ def get_socat_header(filepath):
 
 
 def do_add_header_rename(reanalysedInputFile, reanalysedOutputFile, socatAsciiFile, additionalHeaderTextFile):
-    print "Extracting original SOCAT header";
+    print("Extracting original SOCAT header");
     header = get_socat_header(socatAsciiFile);
     header = header[0:-1]; #remove column names, because these are no longer accurate for the reanalysed data.
     
-    print "Constructing new header";
+    print("Constructing new header");
     with open(additionalHeaderTextFile) as additionalHeader:
         extraHeader = [];
         for line in additionalHeader:
@@ -42,18 +42,18 @@ def do_add_header_rename(reanalysedInputFile, reanalysedOutputFile, socatAsciiFi
     
     
     
-    print "reading input data";
+    print("reading input data");
     socatDF = pd.read_table(reanalysedInputFile, sep="\t");
     
     #remove duplicate columns
-    print "removing duplicate columns";
+    print("removing duplicate columns");
     cols = list(socatDF.keys());
     cols.remove("SST_C");
     cols.remove("fCO2_SST");
     socatDF = socatDF[cols];
     
     #rename columns
-    print "renaming columns";
+    print("renaming columns");
     cols[-4] = "T_reynolds [C]";
     cols[-3] = "fCO2_reanalysed [uatm]";
     cols[-2] = "pCO2_SST [uatm]";
@@ -61,7 +61,7 @@ def do_add_header_rename(reanalysedInputFile, reanalysedOutputFile, socatAsciiFi
     socatDF.columns = cols;
     
     #write header
-    print "writing header";
+    print("writing header");
     out = open(reanalysedOutputFile, 'w');
     for line in header:
         out.write(line);
@@ -71,14 +71,14 @@ def do_add_header_rename(reanalysedInputFile, reanalysedOutputFile, socatAsciiFi
         out.write(line);
     
     #write data
-    print "writing data";
+    print("writing data");
     socatDF.to_csv(out, sep="\t", index=False, float_format='%.3f', na_rep='NaN');
     out.close();
 
 if __name__ == "__main__":
     #parse arguments
-    description = unicode("""Adds the original SOCAT header to the top of merged reanalysed SOCAT data. Also adds additional reanalysis-specific section to the header.
-    """, 'utf-8');
+    description = """Adds the original SOCAT header to the top of merged reanalysed SOCAT data. Also adds additional reanalysis-specific section to the header.
+    """;
     
     parser = argparse.ArgumentParser(description=description);
     parser.add_argument("--reanalysedInputFile", type=str, default="defaultPath",
@@ -91,6 +91,6 @@ if __name__ == "__main__":
                         help="Path to the file containing additional section to add to the header.");
 
     clArgs = parser.parse_args();   
-    print " * Appending header to copy of data and saving at:", clArgs.reanalysedOutputFile;
+    print(" * Appending header to copy of data and saving at:", clArgs.reanalysedOutputFile);
     do_add_header_rename(clArgs.reanalysedInputFile, clArgs.reanalysedOutputFile, clArgs.socatAsciiFile, clArgs.additionalHeaderTextFile);
 

@@ -21,12 +21,12 @@ def copy_netcdf(inNC, outNC):
     outNC.setncatts({"SOCAT_"+k:inNC.__dict__[k] for k in inNC.__dict__});
     #copy dimensions
     for name, dimension in inNC.dimensions.items():
-        print "Copying SOCAT dimension", name;
+        print("Copying SOCAT dimension", name);
         outNC.createDimension(name, (len(dimension) if not dimension.isunlimited() else None));
     
     #copy all file data except for the excluded
     for name, variable in inNC.variables.items():
-        print "Copying SOCAT variable", name;
+        print("Copying SOCAT variable", name);
         outNC.createVariable(name, variable.datatype, variable.dimensions);
         #Copy variable attributes
         outNC[name].setncatts(inNC[name].__dict__);
@@ -104,30 +104,29 @@ def do_combine_netcdf(socatGridPath, reanalysisDataDirectory, outputPath, startY
                         oldVar = monthlyNC.variables[oldVarname];
                         try:
                             newVar = combinedNC.createVariable(oldToNewMap[oldVarname], oldVar.dtype, (u"tmnth", u"ylat", u"xlon"));
-                            print "Appending variable metadata:", oldVarname, newVar.name;
+                            print("Appending variable metadata:", oldVarname, newVar.name);
                             newVar.setncatts({k: oldVar.getncattr(k) for k in oldVar.ncattrs()}); # Copy variable attributes
                         except RuntimeError as e:
-                            print e, "\nOld name:", oldVarname, "\nNew name: "+oldToNewMap[oldVarname];
+                            print(e, "\nOld name:", oldVarname, "\nNew name: "+oldToNewMap[oldVarname]);
                             raise SystemExit();
                             
                     first = False;
                 
                 #Append data to the correct point in time
                 newNCTimeIndex = calc_time_index(year, month);# - timeOffset;
-                print "Adding reanalysed slice:", newNCTimeIndex, year, month;
+                print("Adding reanalysed slice:", newNCTimeIndex, year, month);
                 for monthlyNCVar in oldToNewMap.keys():
                     newNCVar = oldToNewMap[monthlyNCVar];
                     combinedNC.variables[newNCVar][newNCTimeIndex,:,:] = np.flipud(monthlyNC.variables[monthlyNCVar][0,:,:]);
                 
             except IOError as e:
-                print "Skipping netCDF month "+monthStr+" for year "+str(year)+" because it doesn't exist:", monthYearPath;
+                print("Skipping netCDF month "+monthStr+" for year "+str(year)+" because it doesn't exist:", monthYearPath);
     
     
     #(Re)Calculate and add reynolds SST to the netCDF file
-    if ("sst_ave_weighted" in combinedNC.keys()): #Early versions of the SOCAT dataset don't include the temperature data in the NC files.
+    if ("sst_ave_weighted" in combinedNC.variables.keys()): #Early versions of the SOCAT dataset don't include the temperature data in the NC files.
         combinedNC.createVariable("sst_reynolds", np.float32, ("tmnth", "ylat", "xlon"));
         #combinedNC["sst_reynolds"].setncatts(combinedNC["weighted_dT"].__dict__);
-        combinedNC
         combinedNC["sst_reynolds"].standard_name = "sst_reynolds";
         combinedNC["sst_reynolds"].long_name = "Mean sea surface temperature at a consistent-depth from the Reynolds OISST field.";
         combinedNC["sst_reynolds"][:] = combinedNC["weighted_dT"][:] + combinedNC["sst_ave_weighted"][:];
@@ -164,8 +163,8 @@ def do_combine_netcdf(socatGridPath, reanalysisDataDirectory, outputPath, startY
 
 if __name__ == "__main__":
     #parse arguments
-    description = unicode("""Downloads CCMPv2 wind speed data between two dates.
-    """, 'utf-8');
+    description = """Downloads CCMPv2 wind speed data between two dates.
+    """;
     
     parser = argparse.ArgumentParser(description=description);
     parser.add_argument("--socatGridPath", type=str, default="defaultPath",
@@ -183,7 +182,7 @@ if __name__ == "__main__":
     clArgs = parser.parse_args();   
     
     #Download files.
-    print "* Merging SOCAT and reanalysed SOCAT data from", clArgs.startYear, "to", clArgs.stopYear;
+    print("* Merging SOCAT and reanalysed SOCAT data from", clArgs.startYear, "to", clArgs.stopYear);
     do_combine_netcdf(socatGridPath=clArgs.socatGridPath, reanalysisDataDirectory=clArgs.reanalysisDataDirectory, outputPath=clArgs.outputPath, startYr=clArgs.startYear, stopYr=clArgs.stopYear);
 
 
